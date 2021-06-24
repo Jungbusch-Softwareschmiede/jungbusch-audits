@@ -1,2 +1,3 @@
 # jungbusch-audits
-Beeinhaltet Audit-Konfigurationsdateien für das Jungbusch-Auditorium. Diese basieren auf CIS-Benchmarks und unterliegen daher auch derselbigen Lizenz.
+
+In diesem Repository werden die Adaptionen der [CIS-Benchmarks](https://downloads.cisecurity.org/#/) im Format des [Jungbusch-Auditoriums](https://github.com/Jungbusch-Softwareschmiede/jungbusch-auditorium) bereitgestellt. Den [CIS SecureSuite® Membership Terms of Use](https://www.cisecurity.org/cis-securesuite/cis-securesuite-membership-terms-of-use/) entsprechend unterliegen die Ressourcen dieses Repositories der [Attribution-NonCommercial-ShareAlike 4.0 International](https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode).

@@ -1,0 +1,128 @@
+/*
+Autor: Jungbusch Softwareschmiede
+Date: 16.06.2021
+Version: 0.1
+Anmerkungen: Keine
+Vorlage: CIS Red Hat Enterprise Linux 8 Benchmark | v1.0.0 -09-30-2019
+*/
+
+{
+    %varcheck1% = %result%
+	module:"CheckPartition"
+	stepid:"1"
+	description:"Ensure if nodev option set on /dev/shm partition"
+	grep:"\s/dev/shm\s"
+    vgrep:"nodev"
+	passed: if("%result% == ''")
+    {
+        %varcheck2% = %result%
+        module:"CheckPartition"
+        stepid:"1.1"
+        description:"Ensure /tmp is configured"
+        grep:"\s/tmp\s"
+        passed: if("%result% == 'tmpfs on /tmp type tmpfs (rw,nosuid,nodev,noexec,relatime)'")
+        {
+            %varmod1% = %passed%
+            condition: if("%varcheck1% == %varcheck2%")
+            module:"Modprobe"
+            stepid:"1.1.1"
+            description:"Ensure mounting of squashfs filesystems is disabled"
+            name:"squashfs"
+            passed: if("%result%")
+	{
+               condition: if("%varmod1%")
+               module:"Systemctl"
+               stepid:"1.1.1.1"
+               description:"Ensure Avahi Server is not enabled"
+               unitdatei:"avahi-daemon"
+               passed: if("%result% == 'disabled'")
+            },
+        },
+    },
+},
+{
+    module:"IsInstalled"
+    stepid:"2"
+    description:"Ensure rsyslog is installed"
+    package:"rsyslog"
+    passed: if("%result%")
+},
+
+{
+    %vargrep1% = %passed%
+    module:"FileContent"
+    stepid:"3"
+    description:"Ensure no legacy + entries exist in shadow"
+    file:"/etc/shadow"
+    grep:"^\+:"
+    passed: if("%result% == ''")
+},
+{
+    module:"Sysctl"
+    stepid:"4"
+    description:"Ensure packet redirect sending is disabled"
+    kernelparameter:"net.ipv4.conf.all.send_redirects"
+    passed: if("%result%.includes('= 0')")
+    %sysctlpassed% = %passed%
+    {
+        condition: if("%sysctlpassed% == 'true'")
+        module:"Sysctl"
+        stepid:"4.1"
+        description:"Ensure packet redirect sending is disabled_2"
+        kernelparameter:"net.ipv4.conf.all.send redirects"
+        passed: if("%result%.includes('= 0')")
+    },
+},
+{
+    module:"FileContent"
+    stepid: "5"
+    description:"Ensure kernel module loading and unloading is collected"
+    file:"/etc/audit/rules.d/audit.rules"
+    grep:"modules"
+    passed: if("%result% == '-w /sbin/insmod -p x -k modules\n-w /sbin/rmmod -p x -k modules\n-w /sbin/modprobe -p x -k modules\n-a always,exit -F arch=b64 -S init_module -S delete_module -k modules'")
+    %auditrules% = %passed%
+    {
+        condition: if("%auditrules%")
+        module:"Auditctl"
+        stepid:"5.1"
+        description:"Ensure kernel module loading and unloading is collected"
+        grep:"modules"
+        passed: if("%result% == '-w /sbin/insmod -p x -k modules\n-w /sbin/rmmod -p x -k modules\n-w /sbin/modprobe -p x -k modules\n-a always,exit -F arch=b64 -S init_module -S delete_module -k modules'")
+    },
+},
+{
+    module:"Sshd"
+    stepid:"6"
+    description:"Ensure SSH LogLevel is appropriate"
+    grep:"loglevel"
+    passed: if("%result%.includes('VERBOSE') || %result%.includes('INFO')")
+},
+{
+    module:"ExecuteCommand"
+    stepid:"7"
+    description:"View kernel version"
+    command:"uname -r"
+    passed: if("%result% == '4.18.0-240.22.1.el8_3.x86_64'")
+},
+{
+    module:"Stat"
+    stepid:"8"
+    description:"Ensure permissions on /etc/crontab are configured"
+    file:"/etc/crontab"
+    passed: if("%result% == 'Access: (0600/-rw-------)  Uid: (    0/    root)   Gid: (    0/    root)'")
+},
+{
+    module:"NftListRuleset"
+    stepid:"9"
+    description:"Ensure nftables loopback traffic is configured"
+    awk:"/hook input/,/}/"
+    grep:`iif "lo" accept`
+    passed: if(`%result% == 'iif "lo" accept'`)
+},
+{
+    module:"Authselect"
+    stepid:"10"
+    description:"Create custom authselect profile"
+    grep:"Profile ID: custom"
+    passed: if("%result%.includes('Profile ID: custom')")
+},
